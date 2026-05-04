@@ -19,3 +19,7 @@ Thumbs.db
 # Virtual environments
 venv/
 env/
+web_app/.venv/
+
+# Deployed ML bundles (regénérables avec train_artifacts.py)
+web_app/artifacts/*.pkl

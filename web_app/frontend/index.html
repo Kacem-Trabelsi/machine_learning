@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Medical ML — Démo</title>
+  <script>
+    (function () {
+      var s = localStorage.getItem("ml-theme");
+      if (s === "light" || s === "dark") {
+        document.documentElement.setAttribute("data-theme", s);
+      } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
+        document.documentElement.setAttribute("data-theme", "light");
+      }
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <p id="file-protocol-hint" class="file-hint" hidden>
+    Page ouverte en <strong>fichier local</strong> : le style est appliqué, mais les prédictions nécessitent l’API.
+    Démarrez le serveur puis ouvrez plutôt <a href="http://127.0.0.1:8765" target="_blank" rel="noopener">http://127.0.0.1:8765</a>
+    (ou laissez cette page : les requêtes partiront vers le port <strong>8765</strong> si l’API tourne).
+  </p>
+  <header class="header">
+    <div class="header-top">
+      <div class="brand">
+        <span class="logo-mark" aria-hidden="true"></span>
+        <div>
+          <h1>Medical ML</h1>
+          <p class="sub">Classification cardiaque, régression hospitalière (durée), visualisation PCA Sirio</p>
+        </div>
+      </div>
+      <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Basculer entre thème clair et sombre" title="Thème clair / sombre">
+        <span class="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true">☀</span>
+        <span class="theme-toggle__icon theme-toggle__icon--moon" aria-hidden="true">☾</span>
+      </button>
+    </div>
+    <p id="health" class="health"></p>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button type="button" class="tab active" data-tab="classification">Classification</button>
+    <button type="button" class="tab" data-tab="regression">Régression hôpital</button>
+    <button type="button" class="tab" data-tab="clustering">Clustering PCA</button>
+  </nav>
+
+  <main>
+    <section id="panel-classification" class="panel active">
+      <p class="hint">
+        Un seul bouton remplit le formulaire en <strong>alternance</strong> : un tirage aléatoire orienté
+        <strong>négatif</strong> puis un orienté <strong>positif</strong> (plages différentes à chaque clic), sans garantir absolue sur la classe prédite par le modèle.
+      </p>
+      <form id="form-medical" class="form-grid">
+        <label>Âge <input name="age" type="number" step="0.1" value="55" required /></label>
+        <label>Genre (0 / 1) <input name="gender" type="number" min="0" max="1" value="1" required /></label>
+        <label>Fréquence cardiaque <input name="heart_rate" type="number" step="0.1" value="70" required /></label>
+        <label>Pression systolique <input name="systolic_bp" type="number" step="0.1" value="130" required /></label>
+        <label>Pression diastolique <input name="diastolic_bp" type="number" step="0.1" value="80" required /></label>
+        <label>Glycémie <input name="blood_sugar" type="number" step="0.1" value="120" required /></label>
+        <label>CK-MB <input name="ck_mb" type="number" step="0.001" value="2.5" required /></label>
+        <label>Troponine <input name="troponin" type="number" step="0.0001" value="0.05" required /></label>
+        <div class="form-actions">
+          <button type="submit" class="btn primary">Prédire</button>
+          <button type="button" id="btn-sample-alternate" class="btn">Tirage aléatoire</button>
+        </div>
+      </form>
+      <pre id="out-medical" class="result"></pre>
+    </section>
+
+    <section id="panel-regression" class="panel">
+      <p class="hint">
+        Le modèle attend le vecteur de <strong>53</strong> caractéristiques après préparation (notebook hôpital).
+        « Tirage aléatoire » insère une <strong>ligne au hasard</strong> de l’ensemble d’entraînement, puis « Prédire » ; vous pouvez aussi coller des valeurs séparées par des virgules.
+      </p>
+      <div class="panel-block">
+        <div class="row">
+          <button type="button" id="btn-example" class="btn">Tirage aléatoire</button>
+        </div>
+        <textarea id="hospital-features" class="features-ta" rows="6" placeholder="liste de nombres…"></textarea>
+        <button type="button" id="btn-hospital" class="btn primary">Prédire la durée (jours)</button>
+      </div>
+      <pre id="out-hospital" class="result"></pre>
+    </section>
+
+    <section id="panel-clustering" class="panel">
+      <p class="hint">Projection PCA (PC₁, PC₂) sur un sous-échantillon des patients Sirio — exploration visuelle.</p>
+      <div class="panel-block panel-block--flush">
+        <canvas id="pca-canvas" width="900" height="520"></canvas>
+        <div class="panel-block__footer">
+          <button type="button" id="btn-pca" class="btn">Recharger les points</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
