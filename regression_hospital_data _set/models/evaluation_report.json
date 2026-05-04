@@ -1,0 +1,11 @@
+{
+  "notebook": "02c_Modeling_Hospital.ipynb",
+  "champion": "Random Forest",
+  "metrics_test": {
+    "rmse_days": 3.0136012095491065,
+    "mae_days": 1.610343145743146,
+    "r2": 0.3028287212418391
+  },
+  "modeling_metadata_path": "C:\\Users\\rahma\\Desktop\\machine learning project\\regression_hospital_data _set\\models\\modeling_metadata.json",
+  "n_test": 165
+}
