@@ -1,0 +1,59 @@
+{
+  "random_state": 42,
+  "source_file": "C:\\Users\\rahma\\Desktop\\machine learning project\\classification_Medical_data _set\\Medicaldataset.csv",
+  "input_shape": [
+    1319,
+    9
+  ],
+  "train_shape": [
+    1055,
+    12
+  ],
+  "test_shape": [
+    264,
+    12
+  ],
+  "target_mapping": {
+    "negative": 0,
+    "positive": 1
+  },
+  "continuous_columns": [
+    "Age",
+    "Gender",
+    "Heart rate",
+    "Systolic blood pressure",
+    "Diastolic blood pressure",
+    "Blood sugar",
+    "CK-MB",
+    "Troponin",
+    "Pulse_Pressure",
+    "CK_MB_Troponin_Ratio"
+  ],
+  "flag_columns": [
+    "flag_hr_out_of_range",
+    "flag_sbp_out_of_range"
+  ],
+  "clinical_bounds": {
+    "Heart rate": [
+      25,
+      250
+    ],
+    "Systolic blood pressure": [
+      50,
+      280
+    ]
+  },
+  "qa_summary": {
+    "train_rows": 1055,
+    "test_rows": 264,
+    "feature_count": 12,
+    "train_has_nan": false,
+    "test_has_nan": false,
+    "train_has_inf": false,
+    "test_has_inf": false,
+    "flag_hr_out_of_range_total": 5,
+    "flag_sbp_out_of_range_total": 1,
+    "complete_case_rows_after_rule_based_nan": 1313,
+    "complete_case_pct_after_rule_based_nan": 99.55
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "selected_model": "Gradient Boosting",
+  "cv_winner_by_mean_recall": "Gradient Boosting",
+  "deploy_model_choice": "Gradient Boosting",
+  "cv_recall_mean": 0.9861061419200954,
+  "cv_recall_std": 0.007546848979963889,
+  "test_recall_pos": 0.9876543209876543,
+  "test_pr_auc": 0.9891288208432075,
+  "test_roc_auc": 0.9852335996126846,
+  "test_brier": 0.015818980622305745,
+  "artifact": "C:\\Users\\rahma\\Desktop\\machine learning project\\classification_Medical_data _set\\models\\medical_best_model.pkl",
+  "random_state": 42,
+  "cv_splits": 5
+}

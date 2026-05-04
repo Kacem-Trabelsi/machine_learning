@@ -234,3 +234,57 @@ Pourquoi le Recall et pas l'Accuracy ? Dans un contexte de crise cardiaque, un *
 ## Conclusion de Soutenance
 
 Tous les modèles retenus ont été exportés sous formats binaires `.pkl` via `joblib` et sont architecturalement prêts à être intégrés dans une API REST FastAPI en cloud (Microservice dédié). L'exigence clinique quant au Recall (classification), au traitement de champs diagnostiques textuels via NLP (régression), et à la compression dimensionnelle via PCA (clustering) a guidé chaque decision technique de cette pipeline.
+
+---
+
+## Annexe : Interprétation des données après la phase Data Preparation (Medical)
+
+*Cette annexe explique au jury pourquoi les tableaux préparés contiennent des valeurs négatives ou des décimales, et comment les relier aux bonnes pratiques CRISP-DM.*
+
+### Pourquoi l'âge et d'autres variables deviennent négatifs après le prétraitement
+
+Après application du **RobustScaler** (ajusté **uniquement sur le jeu d'entraînement**, puis appliqué au test), chaque variable numérique est transformée selon une forme équivalente à :
+
+\[
+x' = \frac{x - \text{médiane}_{\text{train}}}{\text{IQR}_{\text{train}}}
+\]
+
+La **médiane du train** devient la référence **0**. Toute observation **en dessous** de cette médiane obtient une valeur **négative** ; au-dessus, **positive**. Les décimales sont normales. **Une âge « négatif » après scaling ne signifie pas un âge invalide en années** : cela signifie « inférieur à la médiane d'âge du train », en unités robustes.
+
+### Pourquoi le genre peut apparaître comme \texttt{-1.0} et \texttt{0.0} (ou des décimales proches)
+
+Dans le jeu brut, **Genre** est souvent déjà codé en **binaire** (\texttt{0/1}). Lorsqu'on applique le même **RobustScaler** que pour les variables continues, les deux niveaux sont projetés sur **deux coordonnées** dans l'espace scalé (souvent \texttt{0} et \texttt{-1} selon la médiane et l'IQR du train). Il s'agit toujours de **deux états discrets**, pas d'une variable continue clinique. **C'est acceptable** pour des modèles sensibles à l'échelle (SVM, KNN, régression logistique) si l'on documente le choix. **Amélioration optionnelle** (plus « manuel scolaire ») : ne pas scaler le genre (\texttt{ColumnTransformer} : variables continues scalées, genre et drapeaux en \texttt{passthrough}).
+
+### RobustScaler vs StandardScaler (standardisation z-score)
+
+Le **RobustScaler** utilise **médiane** et **écart interquartile (IQR)**, pas moyenne et écart-type. Il est **moins sensible aux queues lourdes** et aux valeurs extrêmes cliniquement informatives (ex. biomarqueurs), ce qui convient souvent mieux aux données tabulaires médicales que le \texttt{StandardScaler} classique.
+
+### Ingénierie des variables, « encodage » de la cible et indicatrices
+
+- **Ingénierie** : pression pulsée (\texttt{Pulse\_Pressure}), ratio \texttt{CK-MB / Troponin} (avec protection du dénominateur), drapeaux \texttt{flag\_hr\_out\_of\_range} / \texttt{flag\_sbp\_out\_of\_range} pour tracer les valeurs vitales hors plages de plausibilité avant imputation.
+- **Cible** : passage explicite de \texttt{negative}/\texttt{positive} vers \texttt{0}/\texttt{1} (\textbf{mappage de labels}), distinct du « target encoding » avancé en ML (moyenne de la cible par équipe).
+- **Imputation** : médiane **fit train uniquement**, puis \texttt{transform} sur le test — **anti-fuite de données**.
+
+### Surapprentissage, sous-apprentissage : que dire en soutenance ?
+
+La préparation **ne « crée » pas** à elle seule le surapprentissage. Celui-ci relève surtout du **choix du modèle**, de la **régularisation** et du **protocole d'entraînement**. En revanche, une préparation **incorrecte** (fuite : scaler/imputer fit sur train+test, réglage sur le test) peut **gonfler artificiellement** les métriques. **Pour le détecter** : écart train vs validation (CV stratifiée), courbes d'apprentissage, stabilité des plis.
+
+### Critères d'acceptation : la phase Data Preparation est-elle « terminée » ?
+
+Oui, lorsque sont produits et vérifiables : split stratifié reproductible, matrices sans NaN/inf après QA, export \texttt{X\_train}, \texttt{X\_test}, \texttt{y\_train}, \texttt{y\_test} et un \texttt{metadata.json} (graines, colonnes, bornes cliniques, résumé QA). La **modélisation** prend alors ces artefacts comme entrée figée.
+
+### Synthèse des résultats actuels (pipeline Medical — Data Preparation)
+
+- **Forme** : train \texttt{(1055, 12)}, test \texttt{(264, 12)} — total \texttt{1319} lignes, **12 features** (variables de base + ingénierie + drapeaux).
+- **Stratification** : taux de positifs ~\textbf{61 \%} quasi identique entre train et test — **bonne préservation du déséquilibre**.
+- **Qualité** : pas de NaN ni d'inf dans les matrices traitées après imputation/scaling ; **5** lignes avec fréquence cardiaque hors plage et **1** tension systolique hors plage — traitées par drapeaux + imputation médiane (train only).
+- **Exports** : dossier \texttt{classification\_Medical\_data\_set/data/processed/medical/} avec CSV + \texttt{metadata.json}.
+
+### Prochaines étapes modélisation (à implémenter dans \texttt{01c\_Modeling\_Medical.ipynb})
+
+1. Charger les CSV préparés et \texttt{metadata.json} ; figer la liste des colonnes.
+2. **Baseline** : classifieur naïf stratifié + régression logistique (ou équivalent) sur les matrices déjà scalées.
+3. **Modèles** : forêts aléatoires, gradient boosting ; option SVM/KNN **uniquement** si cohérent avec l'échelle actuelle.
+4. **Validation** : \texttt{StratifiedKFold} sur **train uniquement** ; éviter tout réglage sur le test.
+5. **Métriques prioritaires** : **Recall (classe positive)**, matrice de confusion, courbe PR / PR-AUC ; ne pas se limiter à l'accuracy.
+6. **Option** : régénérer une variante de préparation avec \texttt{ColumnTransformer} (genre et drapeaux non scalés) pour comparaison en annexe.
