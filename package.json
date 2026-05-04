@@ -1,0 +1,7 @@
+{
+  "name": "machine-learning",
+  "private": true,
+  "scripts": {
+    "vercel-build": "node scripts/vercel-build.js"
+  }
+}
