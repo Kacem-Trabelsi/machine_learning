@@ -1,0 +1,17 @@
+{
+  "clustering_scope": "full_longitudinal_all_windows",
+  "n_rows_feature_matrix": 1925,
+  "n_columns_scaled": 228,
+  "n_columns_pca": 40,
+  "pca_variance_ratio_target": 0.95,
+  "excluded_from_X": [
+    "AGE_PERCENTIL",
+    "PATIENT_VISIT_IDENTIFIER",
+    "WINDOW",
+    "ICU"
+  ],
+  "artifacts": {
+    "X_scaled": "X_scaled.csv",
+    "X_pca": "X_pca.csv"
+  }
+}
