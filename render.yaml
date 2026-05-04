@@ -1,0 +1,11 @@
+# Blueprint Render : https://render.com/docs/blueprint-spec
+# Nouveau compte → Dashboard → New → Blueprint → connecter ce dépôt.
+services:
+  - type: web
+    name: machine-learning-api
+    runtime: python
+    plan: free
+    region: frankfurt
+    buildCommand: pip install -r web_app/requirements.txt && cd web_app/backend && python train_artifacts.py
+    startCommand: cd web_app/backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
