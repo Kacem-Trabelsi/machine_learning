@@ -2,7 +2,7 @@
   "artifact": "medical_case_based_neighbor_bundle.pkl",
   "k_neighbors": 15,
   "metric": "euclidean",
-  "processed_data_dir": "C:\\Users\\rahma\\Desktop\\machine learning project\\classification_Medical_data _set\\data\\processed\\medical",
+  "processed_data_dir": "C:\\Users\\MSI\\Desktop\\machine_learning\\classification_Medical_data _set\\data\\processed\\medical",
   "holdout_neighbor_majority": {
     "accuracy": 0.875,
     "recall_positive": 0.8580246913580247,

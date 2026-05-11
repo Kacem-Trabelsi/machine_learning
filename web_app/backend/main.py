@@ -1,7 +1,8 @@
-"""FastAPI backend: medical classification, hospital regression (feature vector), Sirio PCA sample."""
+"""FastAPI backend: classification médicale, recommandation par similarité, régression hôpital."""
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -9,16 +10,23 @@ import joblib
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from medical_pipeline import TARGET_MAP, MedicalBundle
+from medical_recommendation import load_neighbor_bundle, recommend_from_vitals
 
 ROOT = Path(__file__).resolve().parents[1]
 ART = ROOT / "artifacts"
 PROJECT_ROOT = ROOT.parent
 STATIC = ROOT / "frontend"
+REC_SIDECAR = (
+    PROJECT_ROOT
+    / "classification_Medical_data _set"
+    / "recommendation_model"
+    / "medical_recommendation_sidecar.json"
+)
 
 app = FastAPI(title="Medical ML API", version="1.0.0")
 app.add_middleware(
@@ -31,11 +39,12 @@ app.add_middleware(
 
 _medical: MedicalBundle | None = None
 _hospital: dict[str, Any] | None = None
+_neighbor_bundle: dict[str, Any] | None = None
 
 
 @app.on_event("startup")
 def load_models() -> None:
-    global _medical, _hospital
+    global _medical, _hospital, _neighbor_bundle
     ART.mkdir(parents=True, exist_ok=True)
     med_path = ART / "medical_deploy_bundle.pkl"
     if med_path.exists():
@@ -43,6 +52,7 @@ def load_models() -> None:
     h_path = ART / "hospital_rf.pkl"
     if h_path.exists():
         _hospital = joblib.load(h_path)
+    _neighbor_bundle = load_neighbor_bundle(PROJECT_ROOT)
 
 
 class MedicalIn(BaseModel):
@@ -97,6 +107,7 @@ def health() -> dict[str, Any]:
         "ok": True,
         "medical_loaded": _medical is not None,
         "hospital_loaded": _hospital is not None,
+        "recommendation_loaded": _neighbor_bundle is not None,
         "target_mapping": TARGET_MAP,
     }
 
@@ -127,6 +138,50 @@ def hospital_feature_names() -> dict[str, Any]:
     return {"feature_names": _hospital["feature_names"], "n": len(_hospital["feature_names"])}
 
 
+@app.post("/api/medical/recommend")
+def medical_recommend(body: MedicalIn) -> dict[str, Any]:
+    """k plus proches voisins dans X_train : consensus des issues historiques (démonstration)."""
+    if _medical is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Medical model not found. Run: python web_app/backend/train_artifacts.py",
+        )
+    if _neighbor_bundle is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Neighbor bundle not found. Run: python web_app/backend/train_artifacts.py",
+        )
+    out = recommend_from_vitals(
+        _medical,
+        _neighbor_bundle,
+        age=body.age,
+        gender=body.gender,
+        heart_rate=body.heart_rate,
+        systolic_bp=body.systolic_bp,
+        diastolic_bp=body.diastolic_bp,
+        blood_sugar=body.blood_sugar,
+        ck_mb=body.ck_mb,
+        troponin=body.troponin,
+    )
+    clf = _medical.predict_one(
+        age=body.age,
+        gender=body.gender,
+        heart_rate=body.heart_rate,
+        systolic_bp=body.systolic_bp,
+        diastolic_bp=body.diastolic_bp,
+        blood_sugar=body.blood_sugar,
+        ck_mb=body.ck_mb,
+        troponin=body.troponin,
+    )
+    meta: dict[str, Any] = {"classifier_hint": clf}
+    if REC_SIDECAR.exists():
+        try:
+            meta["sidecar"] = json.loads(REC_SIDECAR.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            meta["sidecar"] = None
+    return {**out, "meta": meta}
+
+
 @app.post("/api/hospital/predict")
 def hospital_predict(body: HospitalIn) -> dict[str, Any]:
     if _hospital is None:
@@ -140,23 +195,6 @@ def hospital_predict(body: HospitalIn) -> dict[str, Any]:
     x = pd.DataFrame([body.features], columns=names)
     pred = float(_hospital["model"].predict(x)[0])
     return {"predicted_duration_days": pred}
-
-
-@app.get("/api/clustering/pca2d")
-def clustering_pca2d(limit: int = 800) -> dict[str, Any]:
-    p = (
-        PROJECT_ROOT
-        / "clustering_sirio_covid_data_set"
-        / "data"
-        / "processed"
-        / "sirio"
-        / "X_pca.csv"
-    )
-    if not p.exists():
-        raise HTTPException(status_code=404, detail="X_pca.csv not found")
-    df = pd.read_csv(p, nrows=min(max(limit, 1), 5000))
-    pts = [{"x": float(row.PC_1), "y": float(row.PC_2)} for _, row in df.iterrows()]
-    return {"n": len(pts), "points": pts}
 
 
 @app.get("/")
@@ -181,6 +219,17 @@ def app_js() -> FileResponse:
     if not p.exists():
         raise HTTPException(status_code=404)
     return FileResponse(p, media_type="application/javascript")
+
+
+@app.get("/config.js", response_model=None)
+def config_js() -> Response:
+    p = STATIC / "config.js"
+    if p.exists():
+        return FileResponse(p, media_type="application/javascript")
+    return Response(
+        content='window.ML_API_BASE = "";',
+        media_type="application/javascript",
+    )
 
 
 if STATIC.exists():

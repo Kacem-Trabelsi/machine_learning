@@ -138,8 +138,9 @@ class MedicalBundle:
     feature_order: list[str]
     target_mapping: dict[str, int]
 
-    def predict_dataframe(self, X_raw_engineered: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
-        Xp = apply_preprocessing(
+    def processed_features(self, X_raw_engineered: pd.DataFrame) -> pd.DataFrame:
+        """Vecteur(s) prétraité(s) aligné(s) sur X_train du jeu médical (régression / k-NN)."""
+        return apply_preprocessing(
             X_raw_engineered,
             self.continuous_cols,
             self.flag_cols,
@@ -147,6 +148,9 @@ class MedicalBundle:
             self.scaler,
             self.feature_order,
         )
+
+    def predict_dataframe(self, X_raw_engineered: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
+        Xp = self.processed_features(X_raw_engineered)
         proba = self.model.predict_proba(Xp)[:, 1]
         pred = (proba >= 0.5).astype(int)
         return pred, proba

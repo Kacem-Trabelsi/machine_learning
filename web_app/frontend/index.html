@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=7" />
 </head>
 <body>
   <p id="file-protocol-hint" class="file-hint" hidden>
@@ -31,7 +31,7 @@
         <span class="logo-mark" aria-hidden="true"></span>
         <div>
           <h1>Medical ML</h1>
-          <p class="sub">Classification cardiaque, régression hospitalière (durée), visualisation PCA Sirio</p>
+          <p class="sub">Assistant guidé — classification, régression hôpital, recommandation par cas similaires</p>
         </div>
       </div>
       <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Basculer entre thème clair et sombre" title="Thème clair / sombre">
@@ -42,62 +42,126 @@
     <p id="health" class="health"></p>
   </header>
 
-  <nav class="tabs" role="tablist">
-    <button type="button" class="tab active" data-tab="classification">Classification</button>
-    <button type="button" class="tab" data-tab="regression">Régression hôpital</button>
-    <button type="button" class="tab" data-tab="clustering">Clustering PCA</button>
-  </nav>
+  <main class="wizard-layout">
+    <nav class="wizard-progress" id="wizard-progress" aria-label="Progression de l’assistant">
+      <button type="button" class="wizard-progress__item is-active" data-wizard-goto="0" aria-current="step">
+        <span class="wizard-progress__idx">1</span>
+        <span class="wizard-progress__text">
+          <span class="wizard-progress__title">Cardiaque</span>
+          <span class="wizard-progress__desc">Classification</span>
+        </span>
+      </button>
+      <span class="wizard-progress__line" aria-hidden="true"></span>
+      <button type="button" class="wizard-progress__item" data-wizard-goto="1">
+        <span class="wizard-progress__idx">2</span>
+        <span class="wizard-progress__text">
+          <span class="wizard-progress__title">Hôpital</span>
+          <span class="wizard-progress__desc">Durée de séjour</span>
+        </span>
+      </button>
+      <span class="wizard-progress__line" aria-hidden="true"></span>
+      <button type="button" class="wizard-progress__item" data-wizard-goto="2">
+        <span class="wizard-progress__idx">3</span>
+        <span class="wizard-progress__text">
+          <span class="wizard-progress__title">Recommandation</span>
+          <span class="wizard-progress__desc">k-NN historique</span>
+        </span>
+      </button>
+    </nav>
 
-  <main>
-    <section id="panel-classification" class="panel active">
-      <p class="hint">
-        Un seul bouton remplit le formulaire en <strong>alternance</strong> : un tirage aléatoire orienté
-        <strong>négatif</strong> puis un orienté <strong>positif</strong> (plages différentes à chaque clic), sans garantir absolue sur la classe prédite par le modèle.
-      </p>
-      <form id="form-medical" class="form-grid">
-        <label>Âge <input name="age" type="number" step="0.1" value="55" required /></label>
-        <label>Genre (0 / 1) <input name="gender" type="number" min="0" max="1" value="1" required /></label>
-        <label>Fréquence cardiaque <input name="heart_rate" type="number" step="0.1" value="70" required /></label>
-        <label>Pression systolique <input name="systolic_bp" type="number" step="0.1" value="130" required /></label>
-        <label>Pression diastolique <input name="diastolic_bp" type="number" step="0.1" value="80" required /></label>
-        <label>Glycémie <input name="blood_sugar" type="number" step="0.1" value="120" required /></label>
-        <label>CK-MB <input name="ck_mb" type="number" step="0.001" value="2.5" required /></label>
-        <label>Troponine <input name="troponin" type="number" step="0.0001" value="0.05" required /></label>
-        <div class="form-actions">
-          <button type="submit" class="btn primary">Prédire</button>
-          <button type="button" id="btn-sample-alternate" class="btn">Tirage aléatoire</button>
-        </div>
-      </form>
-      <pre id="out-medical" class="result"></pre>
-    </section>
+    <div class="wizard-card">
+      <section id="panel-classification" class="wizard-pane is-active" data-wizard-pane="0" aria-hidden="false">
+        <header class="wizard-pane__intro">
+          <h2 class="wizard-pane__title">Classification cardiaque</h2>
+          <p class="wizard-pane__lede">
+            Saisissez les signes vitaux et marqueurs, ou utilisez un <strong>tirage aléatoire</strong> (profils alternés)
+            avant la prédiction.
+          </p>
+        </header>
+        <form id="form-medical" class="form-grid">
+          <label>Âge <input name="age" type="number" step="0.1" value="55" required /></label>
+          <label>Genre (0 / 1) <input name="gender" type="number" min="0" max="1" value="1" required /></label>
+          <label>Fréquence cardiaque <input name="heart_rate" type="number" step="0.1" value="70" required /></label>
+          <label>Pression systolique <input name="systolic_bp" type="number" step="0.1" value="130" required /></label>
+          <label>Pression diastolique <input name="diastolic_bp" type="number" step="0.1" value="80" required /></label>
+          <label>Glycémie <input name="blood_sugar" type="number" step="0.1" value="120" required /></label>
+          <label>CK-MB <input name="ck_mb" type="number" step="0.001" value="2.5" required /></label>
+          <label>Troponine <input name="troponin" type="number" step="0.0001" value="0.05" required /></label>
+          <div class="form-actions">
+            <button type="submit" class="btn primary">Lancer la prédiction</button>
+            <button type="button" id="btn-sample-alternate" class="btn">Tirage aléatoire</button>
+          </div>
+        </form>
+        <div id="out-medical" class="result-stack" role="region" aria-label="Résultat de la prédiction cardiaque" hidden></div>
+      </section>
 
-    <section id="panel-regression" class="panel">
-      <p class="hint">
-        Le modèle attend le vecteur de <strong>53</strong> caractéristiques après préparation (notebook hôpital).
-        « Tirage aléatoire » insère une <strong>ligne au hasard</strong> de l’ensemble d’entraînement, puis « Prédire » ; vous pouvez aussi coller des valeurs séparées par des virgules.
-      </p>
-      <div class="panel-block">
-        <div class="row">
-          <button type="button" id="btn-example" class="btn">Tirage aléatoire</button>
-        </div>
-        <textarea id="hospital-features" class="features-ta" rows="6" placeholder="liste de nombres…"></textarea>
-        <button type="button" id="btn-hospital" class="btn primary">Prédire la durée (jours)</button>
-      </div>
-      <pre id="out-hospital" class="result"></pre>
-    </section>
+      <section id="panel-regression" class="wizard-pane" data-wizard-pane="1" aria-hidden="true" hidden>
+        <header class="wizard-pane__intro">
+          <h2 class="wizard-pane__title">Régression — durée d’hospitalisation</h2>
+          <p class="wizard-pane__lede">
+            <strong>53</strong> variables préparées (notebook hôpital), réparties en étapes. Utilisez
+            <strong>Tirage aléatoire</strong> pour une ligne cohérente issue de l’entraînement, puis parcourez les étapes
+            avant de prédire.
+          </p>
+        </header>
+        <form id="form-hospital" class="hospital-form panel-block">
+          <div class="hospital-form__toolbar">
+            <button type="button" id="btn-example" class="btn">Tirage aléatoire (ligne entière)</button>
+          </div>
+          <p id="hospital-fields-status" class="hospital-fields-status">Chargement des champs…</p>
+          <div id="hospital-inner-wizard" class="hospital-inner-wizard" hidden>
+            <div class="step-pills" id="hospital-step-pills" role="tablist" aria-label="Sous-étapes du formulaire"></div>
+            <p id="hospital-substep-caption" class="hospital-substep-caption"></p>
+            <div id="hospital-fields-wrap" class="hospital-fields-wrap" aria-live="polite"></div>
+            <div class="hospital-inner-nav">
+              <button type="button" id="btn-hospital-sub-prev" class="btn btn--ghost">← Étape précédente</button>
+              <button type="button" id="btn-hospital-sub-next" class="btn">Étape suivante →</button>
+            </div>
+          </div>
+          <div class="form-actions hospital-form__footer-actions">
+            <button type="submit" class="btn primary">Prédire la durée (jours)</button>
+          </div>
+        </form>
 
-    <section id="panel-clustering" class="panel">
-      <p class="hint">Projection PCA (PC₁, PC₂) sur un sous-échantillon des patients Sirio — exploration visuelle.</p>
-      <div class="panel-block panel-block--flush">
-        <canvas id="pca-canvas" width="900" height="520"></canvas>
-        <div class="panel-block__footer">
-          <button type="button" id="btn-pca" class="btn">Recharger les points</button>
-        </div>
-      </div>
-    </section>
+        <div id="out-hospital" class="result-stack" role="region" aria-label="Résultat durée d&apos;hospitalisation" hidden></div>
+      </section>
+
+      <section id="panel-recommendation" class="wizard-pane" data-wizard-pane="2" aria-hidden="true" hidden>
+        <header class="wizard-pane__intro">
+          <h2 class="wizard-pane__title">Recommandation — cas similaires (dataset médical)</h2>
+          <p class="wizard-pane__lede">
+            Basé sur le notebook <strong>04_Recommendation_Medical</strong> : on retrouve les <strong>k plus proches</strong> patients
+            du jeu d’<strong>entraînement</strong> (même prétraitement que la classification), et on résume leurs issues historiques
+            <strong>positive / negative</strong>. Aide à la transparence — pas un avis clinique autonome.
+          </p>
+        </header>
+        <form id="form-recommend" class="form-grid">
+          <label>Âge <input name="age" type="number" step="0.1" value="55" required /></label>
+          <label>Genre (0 / 1) <input name="gender" type="number" min="0" max="1" value="1" required /></label>
+          <label>Fréquence cardiaque <input name="heart_rate" type="number" step="0.1" value="70" required /></label>
+          <label>Pression systolique <input name="systolic_bp" type="number" step="0.1" value="130" required /></label>
+          <label>Pression diastolique <input name="diastolic_bp" type="number" step="0.1" value="80" required /></label>
+          <label>Glycémie <input name="blood_sugar" type="number" step="0.1" value="120" required /></label>
+          <label>CK-MB <input name="ck_mb" type="number" step="0.001" value="2.5" required /></label>
+          <label>Troponine <input name="troponin" type="number" step="0.0001" value="0.05" required /></label>
+          <div class="form-actions">
+            <button type="submit" class="btn primary">Trouver les cas similaires</button>
+            <button type="button" id="btn-recommend-sync" class="btn">Importer depuis l’étape 1</button>
+            <button type="button" id="btn-recommend-random" class="btn">Tirage aléatoire</button>
+          </div>
+        </form>
+        <div id="out-recommend" class="result-stack" role="region" aria-label="Résultat recommandation k-NN" hidden></div>
+      </section>
+
+      <footer class="wizard-card__footer">
+        <button type="button" id="btn-wizard-prev" class="btn btn--ghost">← Étape précédente</button>
+        <div class="wizard-card__footer-hint" id="wizard-footer-hint"></div>
+        <button type="button" id="btn-wizard-next" class="btn primary">Étape suivante →</button>
+      </footer>
+    </div>
   </main>
 
-  <script src="config.js"></script>
-  <script src="app.js"></script>
+  <script src="config.js?v=8"></script>
+  <script src="app.js?v=7"></script>
 </body>
 </html>
