@@ -1,5 +1,5 @@
 /**
- * Exemple : après déploiement Render, copier ce fichier vers config.js
- * ou mettre l’URL HTTPS publique du service (sans / final).
+ * Copier vers config.js ou définir ML_API_BASE dans le HTML avant le script.
+ * Le config.js du dépôt détecte déjà localhost vs hébergement ; cette URL sert de référence.
  */
-window.ML_API_BASE = "https://machine-learning-api.onrender.com";
+window.ML_API_BASE = "https://machine-learning-api-04an.onrender.com";

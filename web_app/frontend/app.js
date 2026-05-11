@@ -368,7 +368,8 @@ function setHealth() {
     })
     .catch((e) => {
       el.className = "health";
-      el.textContent = `API indisponible : ${e.message} — vérifiez le serveur et que config.js définit ML_API_BASE sur "" pour un usage 100 % local.`;
+      el.textContent =
+        `API indisponible : ${e.message} — en local : ouvrir via localhost et le backend (ex. :8000), ou localStorage.setItem("ml-api-base-override","https://…onrender.com"). Sur le déploiement statique, config.js pointe déjà l’API Render ; un NOT_FOUND indique souvent un site sans cette route (redéployer l’API) ou cache (Ctrl+F5).`;
     });
 }
 

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Rapport Medical ML</title>
+  <style>
+    @page { margin: 18mm; size: A4; }
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      font-size: 11pt;
+      line-height: 1.45;
+      color: #111;
+      max-width: 190mm;
+      margin: 0 auto;
+      padding: 8px;
+    }
+    h1 { font-size: 1.55rem; border-bottom: 2px solid #0369a1; padding-bottom: 0.35rem; }
+    h2 { font-size: 1.15rem; margin-top: 1.4rem; color: #0f172a; }
+    h3 { font-size: 1rem; }
+    table { border-collapse: collapse; width: 100%; margin: 0.8rem 0; font-size: 10pt; }
+    th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; vertical-align: top; }
+    th { background: #f1f5f9; }
+    code, pre { font-family: Consolas, monospace; font-size: 9pt; background: #f8fafc; }
+    pre { padding: 10px; overflow-x: auto; border: 1px solid #e2e8f0; }
+    img { max-width: 100%; height: auto; page-break-inside: avoid; border: 1px solid #e2e8f0; }
+    hr { border: none; border-top: 1px solid #e2e8f0; margin: 1.2rem 0; }
+    em { color: #475569; }
+    a { color: #0369a1; }
+  </style>
+</head>
+<body>
+<h1>Rapport de projet — Plateforme Medical ML (Web, déploiement &amp; intégration)</h1>
+<!-- 
+  Export PDF suggéré :
+  - VS Code / Cursor : extension "Markdown PDF" ou imprimer depuis prévisualisation.
+  - Pandoc : pandoc docs/RAPPORT_PROJET_ML_WEB.md -o RAPPORT.pdf --pdf-engine=xelatex -V geometry:margin=2.5cm
+  - Les images sont référencées depuis le dossier docs/ (chemins images/...).
+-->
+
+<hr />
+<h2>Page de garde</h2>
+<table>
+<thead>
+<tr>
+<th>Élément</th>
+<th>Contenu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Titre</strong></td>
+<td>Projet Medical ML — Application web &amp; déploiement cloud</td>
+</tr>
+<tr>
+<td><strong>Auteur / équipe</strong></td>
+<td>CodeCraft</td>
+</tr>
+<tr>
+<td><strong>Institution / formation</strong></td>
+<td>ESPRIT</td>
+</tr>
+<tr>
+<td><strong>Encadrante</strong></td>
+<td>Jihen Hlel</td>
+</tr>
+<tr>
+<td><strong>Date</strong></td>
+<td>4 mai 2026</td>
+</tr>
+<tr>
+<td><strong>Référentiel Git</strong></td>
+<td><code>https://github.com/Kacem-Trabelsi/machine_learning</code> <em>(ajuster si autre fork)</em></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Table des matières</h2>
+<ol>
+<li><a href="#1-introduction">Introduction</a>  </li>
+<li><a href="#2-vue-densemble-du-dépôt">Vue d’ensemble du dépôt</a>  </li>
+<li><a href="#3-architecture-technique">Architecture technique</a>  </li>
+<li><a href="#4-backend--api-fastapi">Backend — API FastAPI</a>  </li>
+<li><a href="#5-frontend--interface-utilisateur">Frontend — interface utilisateur</a>  </li>
+<li><a href="#6-déploiement--render-blueprint">Déploiement — Render (Blueprint)</a>  </li>
+<li><a href="#7-déploiement--vercel">Déploiement — Vercel</a>  </li>
+<li><a href="#8-chaîne-de-bout-en-bout">Chaîne de bout en bout</a>  </li>
+<li><a href="#9-captures-décran--interface--vercel">Captures d’écran — interface &amp; Vercel</a>  </li>
+<li><a href="#10-conclusion">Conclusion</a></li>
+</ol>
+<hr />
+<h2>1. Introduction</h2>
+<p>Ce document décrit <strong>la partie intégration logicielle</strong> du projet : mise en œuvre d’une <strong>API REST</strong> exposant les modèles, d’une <strong>interface web</strong> (thème clair/sombre), et du <strong>déploiement</strong> sur <strong>Render</strong> (backend) et <strong>Vercel</strong> (frontend statique), avec <strong>Blueprint Render</strong> pour reproduire l’infrastructure.</p>
+<p><strong>Objectifs couverts par ce rapport :</strong></p>
+<ul>
+<li>Expliquer comment le code ML existant dans le dépôt est <strong>branché</strong> sur l’API et le front.  </li>
+<li>Documenter <strong>Render</strong> et <strong>Vercel</strong> (commandes de build, fichiers de configuration, variables).  </li>
+<li>Illustrer le résultat par des <strong>captures d’écran</strong> (interface hébergée et tableau de bord Vercel).</li>
+</ul>
+<hr />
+<h2>2. Vue d’ensemble du dépôt</h2>
+<p>Le dépôt combine :</p>
+<ul>
+<li><strong>Dossiers notebooks &amp; données</strong> (travail ML déjà réalisé) :  </li>
+<li><code>classification_Medical_data _set/</code>  </li>
+<li><code>regression_hospital_data _set/</code>  </li>
+<li><code>clustering_sirio_covid_data_set/</code>  </li>
+<li><strong>Application web</strong> :  </li>
+<li><code>web_app/backend/</code> — Python, FastAPI, pipelines d’inférence.  </li>
+<li><code>web_app/frontend/</code> — HTML, CSS, JavaScript (sans framework imposé).  </li>
+<li><code>web_app/requirements.txt</code> — dépendances serveur.  </li>
+<li><code>web_app/artifacts/</code> — artefacts <code>*.pkl</code> générés localement ou au build Render (<strong>non versionnés</strong> par défaut).</li>
+</ul>
+<p>À la racine : <code>render.yaml</code> (Blueprint), <code>runtime.txt</code>, <code>vercel.json</code>, <code>package.json</code>, <code>scripts/vercel-build.js</code> pour le déploiement frontend.</p>
+<hr />
+<h2>3. Architecture technique</h2>
+<p>Schéma logique :</p>
+<pre><code class="language-text">[Navigateur / Vercel]          [Render — service Web Python]
+        |                                   |
+        |  HTTPS  (CORS autorisé)            |
+        +---------- GET/POST /api/* --------&gt;|
+        |                                   +-- FastAPI (uvicorn)
+        |                                   +-- joblib : modèles
+        |                                   +-- pandas / données CSV du repo
+        |
+   config.js : window.ML_API_BASE = URL Render
+</code></pre>
+<ul>
+<li>Le <strong>frontend</strong> peut aussi être servi <strong>par la même instance FastAPI</strong> (<code>/</code> et fichiers statiques) lorsqu’on ouvre uniquement l’URL Render.  </li>
+<li>Sur <strong>Vercel</strong>, seul le <strong>frontend statique</strong> est hébergé ; les appels API visent l’URL <strong>Render</strong> définie dans <code>web_app/frontend/config.js</code>.</li>
+</ul>
+<hr />
+<h2>4. Backend — API FastAPI</h2>
+<p><strong>Emplacement :</strong> <code>web_app/backend/</code></p>
+<p><strong>Fichiers principaux :</strong></p>
+<table>
+<thead>
+<tr>
+<th>Fichier</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>main.py</code></td>
+<td>Application FastAPI : routes, CORS, montage statique, chargement des <code>.pkl</code> au démarrage.</td>
+</tr>
+<tr>
+<td><code>medical_pipeline.py</code></td>
+<td>Préparation alignée sur le notebook médical (features, imputation, <code>RobustScaler</code>), bundle modèle + <code>predict_one</code>.</td>
+</tr>
+<tr>
+<td><code>train_artifacts.py</code></td>
+<td>Entraîne / sérialise <code>medical_deploy_bundle.pkl</code> et <code>hospital_rf.pkl</code> dans <code>web_app/artifacts/</code>.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Endpoints REST (synthèse) :</strong></p>
+<table>
+<thead>
+<tr>
+<th>Méthode</th>
+<th>Chemin</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/health</code></td>
+<td>État de l’API et chargement des modèles.</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/medical/predict</code></td>
+<td>Classification binaire : entrées cliniques brutes → probabilité / label.</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/hospital/feature-names</code></td>
+<td>Noms des 53 variables de la régression.</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/hospital/random-features</code></td>
+<td>Tirage aléatoire d’une ligne de <code>X_train</code> (vecteur préparé).</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/hospital/example-features</code></td>
+<td>Exemple fixe (première ligne) — optionnel.</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/hospital/predict</code></td>
+<td>Régression : vecteur de 53 nombres → durée prédite (jours).</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/clustering/pca2d</code></td>
+<td>Échantillon PC₁ / PC₂ pour visualisation (données Sirio déjà en PCA).</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/</code></td>
+<td>Page d’accueil statique (si fichiers présents).</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/styles.css</code>, <code>/app.js</code>, etc.</td>
+<td>Assets frontend servis par le backend si besoin.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>CORS :</strong> configuration ouverte (<code>allow_origins</code> large) pour faciliter Vercel + tests locaux — à durcir en production réelle.</p>
+<p><strong>Artefacts :</strong> générés par <code>train_artifacts.py</code> (<em>gradient boosting</em> médical + <em>random forest</em> hôpital sur matrices déjà préparées dans le dépôt).</p>
+<hr />
+<h2>5. Frontend — interface utilisateur</h2>
+<p><strong>Emplacement :</strong> <code>web_app/frontend/</code></p>
+<p><strong>Stack :</strong> HTML5, CSS3 (variables de thème <code>data-theme</code>), JavaScript vanilla (pas de build obligatoire en local).</p>
+<p><strong>Fonctionnalités décrites dans ce rapport :</strong></p>
+<ul>
+<li><strong>Onglets</strong> : Classification médicale, Régression hôpital, Nuage PCA.  </li>
+<li><strong>Classification</strong> : formulaire des 8 variables, bouton « Prédire », « Tirage aléatoire » (alternance de profils), affichage JSON requête + réponse.  </li>
+<li><strong>Régression</strong> : textarea pour 53 valeurs, « Tirage aléatoire » via API, prédiction durée.  </li>
+<li><strong>PCA</strong> : canvas 2D, couleurs synchronisées au thème (<code>--canvas-bg</code>, etc.).  </li>
+<li><strong>Thème</strong> : bascule clair / sombre, préférence stockée (<code>localStorage</code>).  </li>
+<li><strong>Configuration production :</strong> <code>config.js</code> définit <code>window.ML_API_BASE</code> (URL Render sans slash final).</li>
+</ul>
+<p><strong>Polices :</strong> DM Sans, JetBrains Mono (chargées via Google Fonts — nécessite réseau ou fallback système).</p>
+<hr />
+<h2>6. Déploiement — Render (Blueprint)</h2>
+<p><strong>Objectif :</strong> héberger l’API Python et, si besoin, la même app sert aussi la page web sur la même URL.</p>
+<p><strong>Fichier Blueprint :</strong> <code>render.yaml</code> (racine du dépôt).</p>
+<p><strong>Contenu typique (extrait fonctionnel) :</strong></p>
+<ul>
+<li><strong>Type :</strong> service Web (<code>type: web</code>), runtime <strong>Python</strong>.  </li>
+<li><strong>Build :</strong> installation des dépendances (<code>web_app/requirements.txt</code>) puis exécution de <code>train_artifacts.py</code> dans <code>web_app/backend</code> pour recréer les <code>.pkl</code> sur l’infra (disque éphémère : régénération à chaque build).  </li>
+<li><strong>Start :</strong> <code>uvicorn main:app</code> depuis <code>web_app/backend</code>, hôte <code>0.0.0.0</code>, port <strong><code>$PORT</code></strong> (variable fournie par Render).  </li>
+<li><strong>Health check :</strong> <code>GET /api/health</code>.  </li>
+<li><strong>Région / plan :</strong> documentés dans le YAML (ex. <code>frankfurt</code>, plan gratuit — veille au <strong>cold start</strong>).</li>
+</ul>
+<p><strong>Fichier <code>runtime.txt</code> :</strong> fixe une version de Python compatible pour Render.</p>
+<p><strong>Après déploiement :</strong> noter l’URL HTTPS publique et la reporter dans <code>config.js</code> pour Vercel.</p>
+<hr />
+<h2>7. Déploiement — Vercel</h2>
+<p><strong>Problème résolu côté dépôt :</strong> Vercel servait la racine Git sans <code>index.html</code> → erreur 404.  </p>
+<p><strong>Solution :</strong></p>
+<ul>
+<li><strong><code>vercel.json</code></strong> (racine) : <code>buildCommand</code> = <code>npm run vercel-build</code>, <code>outputDirectory</code> = <code>dist</code>.  </li>
+<li><strong><code>package.json</code></strong> (racine) : script <code>vercel-build</code>.  </li>
+<li><strong><code>scripts/vercel-build.js</code></strong> : copie récursive <code>web_app/frontend</code> → <code>dist/</code>, ce qui place <strong><code>index.html</code> à la racine du déploiement</strong>.</li>
+</ul>
+<p><strong>Paramètres Vercel (recommandés) :</strong></p>
+<ul>
+<li><strong>Root Directory :</strong> racine du dépôt (là où se trouvent <code>vercel.json</code> et <code>package.json</code>).  </li>
+<li>Le dossier <strong><code>dist/</code></strong> est ignoré par Git ; il est produit <strong>sur les serveurs Vercel</strong> à chaque build.</li>
+</ul>
+<p><strong>Lien avec le backend :</strong> le fichier <strong><code>config.js</code></strong> (copié dans <code>dist</code>) doit contenir l’URL Render exacte pour que <code>fetch</code> atteigne l’API.</p>
+<hr />
+<h2>8. Chaîne de bout en bout</h2>
+<ol>
+<li><strong>Développement local</strong> : <code>python web_app/backend/train_artifacts.py</code> puis <code>uvicorn</code> dans <code>web_app/backend</code>.  </li>
+<li><strong>Front local</strong> : ouvrir <code>http://127.0.0.1:8765/</code> si le serveur sert les pages, ou ouvrir les fichiers avec <code>config.js</code> vide pour même origine.  </li>
+<li><strong>Production</strong> : Build Render → URL API ; build Vercel → URL front ; <code>config.js</code> → URL API ; vérifier <code>/api/health</code> et un formulaire de prédiction.</li>
+</ol>
+<hr />
+<h2>9. Captures d’écran — interface &amp; Vercel</h2>
+<p>Fichiers source : dossier <strong><code>docs/images/</code></strong> (chemins relatifs au dossier <strong><code>docs/</code></strong> pour l’export PDF et le script <code>build_report_pdf.py</code>).</p>
+<h3>Application Medical ML (interface)</h3>
+<p><img alt="Figure 1 — Page d’accueil, onglet Classification" src="file:///C:/Users/MSI/Desktop/machine_learning/docs/images/interface1.png" /></p>
+<p><em>Figure 1 — Vue générale de l’application </em><em>Medical ML</em><em> déployée (URL Vercel ou locale) : en-tête avec titre, sous-titre, indicateur d’état </em><em>API OK</em><em> (modèles médical et hôpital chargés), onglets de navigation ; onglet </em><em>Classification</em><em> actif avec formulaire des variables cliniques (âge, genre, fréquence cardiaque, pressions, glycémie, CK-MB, troponine), boutons </em><em>Prédire</em><em> et </em><em>Tirage aléatoire</em><em> ; thème sombre.</em></p>
+<p><img alt="Figure 2 — Formulaire et résultat de prédiction" src="file:///C:/Users/MSI/Desktop/machine_learning/docs/images/interface2.png" /></p>
+<p><em>Figure 2 — Interface après saisie ou tirage aléatoire : zone de résultat affichant le </em><em>JSON</em><em> envoyé à l’API et la </em><em>réponse</em><em> du modèle (<code>prediction_label</code>, <code>probability_positive</code>, etc.), illustrant le lien front ↔ backend Render.</em></p>
+<p><img alt="Figure 3 — Autre onglet ou vue de l’application" src="file:///C:/Users/MSI/Desktop/machine_learning/docs/images/interface3.png" /></p>
+<p><em>Figure 3 — Exemple de navigation vers un autre volet de l’outil (</em><em>Régression hôpital</em><em> ou </em><em>Clustering PCA</em><em>) ou bascule </em><em>thème clair / sombre</em><em> : mise en page des champs, boutons d’action et cohérence graphique (DM Sans, couleurs d’accent).</em></p>
+<p><img alt="Figure 4 — Régression, PCA ou détail d’écran" src="file:///C:/Users/MSI/Desktop/machine_learning/docs/images/interface4.png" /></p>
+<p><em>Figure 4 — Fonctionnalité associée à la </em><em>régression</em><em> (vecteur de 53 valeurs, tirage aléatoire depuis <code>X_train</code>, prédiction de durée) ou au </em><em>nuage de points PCA</em><em> (axes PC₁ / PC₂) selon la capture ; illustre l’exploitation des sorties des notebooks dans l’interface web.</em></p>
+<h3>Vercel (déploiement &amp; tableau de bord)</h3>
+<p><img alt="Figure 5 — Liste des déploiements Vercel" src="file:///C:/Users/MSI/Desktop/machine_learning/docs/images/interface6.png" /></p>
+<p><em>Figure 5 — Tableau de bord </em><em>Vercel</em><em> : projet front (nom du projet, ex. machine_learningg), liste des </em><em>déploiements</em><em> en production, statut </em><em>Ready</em><em> / durée de build, branche </em><em>main</em><em> et associé commit Git, horodatage et auteur du déploiement ; montre l’intégration continue entre GitHub et Vercel.</em></p>
+<p><img alt="Figure 6 — Détail projet ou paramètres Vercel" src="file:///C:/Users/MSI/Desktop/machine_learning/docs/images/interface7.png" /></p>
+<p><em>Figure 6 — Complément sur le projet Vercel : écran de </em><em>configuration</em><em> (domaine <code>*.vercel.app</code>, root directory, variables d’environnement) ou </em><em>détail d’un déploiement</em><em> (logs, métadonnées) ; confirme la mise en ligne du front statique après build (<code>npm run vercel-build</code>, dossier <code>dist/</code>).</em></p>
+<hr />
+<h2>10. Conclusion</h2>
+<p>Le projet livre une <strong>chaîne complète</strong> entre les modèles issus des notebooks (classification, régression sur données préparées, visualisation PCA) et un <strong>produit web</strong> : API <strong>FastAPI</strong> documentable, interface <strong>responsive</strong> avec <strong>thème clair/sombre</strong>, et déploiement <strong>Render</strong> (Blueprint, régénération des artefacts au build) couplé à <strong>Vercel</strong> (frontend statique après copie vers <code>dist/</code>).</p>
+<p>Les <strong>captures d’écran</strong> illustrent l’expérience utilisateur et la <strong>mise en production</strong> sur Vercel. Les limites usuelles (plan gratuit, cold start, CORS ouvert, usage pédagogique non clinique) devront être rappelées dans une soutenance ou un mémoire plus large sur le volet <strong>machine learning</strong> et l’éthique des données.</p>
+<p><strong>Perspectives possibles (à développer dans d’autres livrables) :</strong> pipeline hôpital bout-en-bout jusqu’à l’API, durcissement de la sécurité, tests automatisés, monitoring des modèles en production.</p>
+<hr />
+<p><em>Fin du document — export PDF : exécuter Pandoc ou imprimer depuis un aperçu Markdown avec le répertoire de travail <code>docs/</code> pour que les images <code>images/...</code> se résolvent correctement.</em></p>
+</body>
+</html>
